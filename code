@@ -1,0 +1,63 @@
+const fetch = require('node-fetch');
+const settings = {
+    golden_key: '' // your golden_key 
+};
+
+const lots = [
+    { game_id: '44', node_id: '879' }, // enter the data
+    { game_id: '220', node_id: '696' }, 
+    { game_id: '141', node_id: '2027' }, 
+    { game_id: '334', node_id: '1356' } 
+];
+
+async function raiseLot(game_id, node_id) {
+    try {
+        const raiseUrl = `https://funpay.com/lots/raise`;
+
+        const params = new URLSearchParams();
+        params.append('game_id', game_id);
+        params.append('node_id', node_id);
+
+        const headers = {
+            "accept": "*/*",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "cookie": `locale=ru; golden_key=${settings.golden_key}`,
+            "x-requested-with": "XMLHttpRequest"
+        };
+
+        let options = {
+            method: 'POST',
+            body: params,
+            headers: headers
+        };
+
+        let resp = await fetch(raiseUrl, options);
+        let res = await resp.json();
+
+        return { success: true, msg: res.msg };
+    } catch (err) {
+        console.log(`Error when raising offers: ${err}`);
+        return { success: false };
+    }
+}
+
+async function raiseAllLots() {
+    for (let i = 0; i < lots.length; i++) {
+        const lot = lots[i];
+        let result = await raiseLot(lot.game_id, lot.node_id);
+
+        if (result.success) {
+            console.log(`Lots are up for game_id: ${lot.game_id}, node_id: ${lot.node_id}. Message: ${result.msg}`);
+        } else {
+            console.log(`Failed to raise lots for game_id: ${lot.game_id}, node_id: ${lot.node_id}.`);
+        }
+    }
+}
+
+async function startAutoRaise() {
+    console.log("The automation of lot raising has been launched. Lots will be raised every 10 minutes.");
+    await raiseAllLots(); 
+    setInterval(raiseAllLots, 10 * 60 * 1000); 
+}
+
+startAutoRaise();
